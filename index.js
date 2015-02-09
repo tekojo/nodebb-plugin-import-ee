@@ -3,7 +3,7 @@ var async = require('async');
 var mysql = require('mysql');
 var _ = require('underscore');
 var noop = function(){};
-var logPrefix = '[nodebb-plugin-import-vbulletin]';
+var logPrefix = '[nodebb-plugin-import-ee]';
 
 (function(Exporter) {
 
@@ -72,11 +72,11 @@ var logPrefix = '[nodebb-plugin-import-vbulletin]';
         }
         var prefix = Exporter.config('prefix');
         var query = 'SELECT '
-            + prefix + 'usergroup.usergroupid as _gid, '
-            + prefix + 'usergroup.title as _title, ' // not sure, just making an assumption
-            + prefix + 'usergroup.pmpermissions as _pmpermissions, ' // not sure, just making an assumption
-            + prefix + 'usergroup.adminpermissions as _adminpermissions ' // not sure, just making an assumption
-            + ' from ' + prefix + 'usergroup ';
+            + prefix + 'exp_member_group.group_id as _gid, '
+            + prefix + 'exp_member_group.group_title as _title, '
+            + prefix + 'exp_member_group.can_email_from_profile as _pmpermissions, ' // pm as in private messaging
+            + prefix + 'exp_member_group.can_admin_upload_prefs as _adminpermissions '
+            + ' from ' + prefix + 'exp_member_group ';
         Exporter.query(query,
             function(err, rows) {
                 if (err) {
@@ -88,20 +88,17 @@ var logPrefix = '[nodebb-plugin-import-vbulletin]';
                 //figure out the admin group
                 var max = 0, admingid;
                 rows.forEach(function(row) {
-                    var adminpermission = parseInt(row._adminpermissions, 10);
-                    if (adminpermission) {
-                        if (adminpermission > max) {
-                            max = adminpermission;
-                            admingid = row._gid;
-                        }
+                    var adminpermission = row._adminpermissions;
+                    if (adminpermission == 'y') {
+                        admingid = row._gid;
                     }
                 });
 
                 rows.forEach(function(row) {
-                    if (! parseInt(row._pmpermissions, 10)) {
+                    if (row._pmpermissions == 'n') {
                         row._banned = 1;
                         row._level = 'member';
-                    } else if (parseInt(row._adminpermissions, 10)) {
+                    } else if (row._adminpermissions == 'y') {
                         row._level = row._gid === admingid ? 'administrator' : 'moderator';
                         row._banned = 0;
                     } else {
@@ -126,20 +123,15 @@ var logPrefix = '[nodebb-plugin-import-vbulletin]';
         var startms = +new Date();
 
         var query = 'SELECT '
-            + prefix + 'user.userid as _uid, '
-            + prefix + 'user.email as _email, '
-            + prefix + 'user.username as _username, '
-            + prefix + 'sigparsed.signatureparsed as _signature, '
-            + prefix + 'user.joindate as _joindate, '
-            + prefix + 'customavatar.filename as _pictureFilename, '
-            + prefix + 'customavatar.filedata as _pictureBlob, '
-            + prefix + 'user.homepage as _website, '
-            + prefix + 'user.reputation as _reputation, '
-            + prefix + 'user.profilevisits as _profileviews, '
-            + prefix + 'user.birthday as _birthday '
-            + 'FROM ' + prefix + 'user '
-            + 'LEFT JOIN ' + prefix + 'sigparsed ON ' + prefix + 'sigparsed.userid=' + prefix + 'user.userid '
-            + 'LEFT JOIN ' + prefix + 'customavatar ON ' + prefix + 'customavatar.userid=' + prefix + 'user.userid '
+            + prefix + 'exp_member.member_id as _uid, '
+            + prefix + 'exp_member.email as _email, '
+            + prefix + 'exp_member.username as _username, '
+            + prefix + 'exp_member.signature as _signature, '
+            + prefix + 'exp_member.join_date as _joindate, '
+            + prefix + 'exp_member.url as _website, '
+            + prefix + 'exp_urs_member_reward.points as _reputation, '
+            + 'FROM ' + prefix + 'exp_member '
+//           + 'LEFT JOIN ' + prefix + 'exp_urs_member_reward ON ' + prefix + 'exp_member.member_id=' + prefix + 'exp_urs_member_reward.member_id '
             + (start >= 0 && limit >= 0 ? 'LIMIT ' + start + ',' + limit : '');
 
 
@@ -177,7 +169,7 @@ var logPrefix = '[nodebb-plugin-import-vbulletin]';
     };
 
 
-    var getCometChatPaginatedMessages = function(start, limit, callback) {
+/*     var getCometChatPaginatedMessages = function(start, limit, callback) {
         callback = !_.isFunction(callback) ? noop : callback;
 
         var startms = +new Date();
@@ -207,9 +199,10 @@ var logPrefix = '[nodebb-plugin-import-vbulletin]';
 
                 callback(null, map);
             });
-    };
+    }; 
+    */
 
-    var getArrowChatPaginatedMessages = function(start, limit, callback) {
+/*    var getArrowChatPaginatedMessages = function(start, limit, callback) {
         callback = !_.isFunction(callback) ? noop : callback;
 
         var startms = +new Date();
@@ -240,10 +233,9 @@ var logPrefix = '[nodebb-plugin-import-vbulletin]';
                 callback(null, map);
             });
     };
+    */
 
     var supportedPlugins = {
-        cometchat: getCometChatPaginatedMessages,
-        arrowchat: getArrowChatPaginatedMessages
     };
 
     Exporter.getMessages = function(callback) {
@@ -262,13 +254,12 @@ var logPrefix = '[nodebb-plugin-import-vbulletin]';
         var startms = +new Date();
         var prefix = Exporter.config('prefix') || '';
         var query = 'SELECT '
-            + prefix + 'pm.pmid as _mid, '
-            + prefix + 'pmtext.fromuserid as _fromuid, '
-            + prefix + 'pm.userid as _touid, '
-            + prefix + 'pmtext.message as _content, '
-            + prefix + 'pmtext.dateline as _timestamp '
-            + 'FROM ' + prefix + 'pm '
-            + 'LEFT JOIN ' + prefix + 'pmtext ON ' + prefix + 'pmtext.pmtextid=' + prefix + 'pm.pmtextid '
+            + prefix + 'exp_message_data.message_id as _mid, '
+            + prefix + 'exp_message_data.sender_id as _fromuid, '
+            + prefix + 'exp_message_data.message_recipient as _touid, '
+            + prefix + 'exp_message_data.message_body as _content, '
+            + prefix + 'exp_message_data.message_date as _timestamp '
+            + 'FROM ' + prefix + 'exp_message_data '
             + (start >= 0 && limit >= 0 ? 'LIMIT ' + start + ',' + limit : '');
 
         Exporter.query(query,
@@ -298,11 +289,11 @@ var logPrefix = '[nodebb-plugin-import-vbulletin]';
         var startms = +new Date();
 
         var query = 'SELECT '
-            + prefix + 'forum.forumid as _cid, '
-            + prefix + 'forum.title as _name, '
-            + prefix + 'forum.description as _description, '
-            + prefix + 'forum.displayorder as _order '
-            + 'FROM ' + prefix + 'forum ' // filter added later
+            + prefix + 'exp_forums.forum_id as _cid, '
+            + prefix + 'exp_forums.forum_name as _name, '
+            + prefix + 'exp_forums.forum_description as _description, '
+            + prefix + 'exp_forums.forum_topic_order as _order '
+            + 'FROM ' + prefix + 'exp_forums ' 
             + (start >= 0 && limit >= 0 ? 'LIMIT ' + start + ',' + limit : '');
 
         Exporter.query(query,
@@ -334,20 +325,20 @@ var logPrefix = '[nodebb-plugin-import-vbulletin]';
         var prefix = Exporter.config('prefix');
         var startms = +new Date();
         var query = 'SELECT '
-            + prefix + 'thread.threadid as _tid, '
-            + prefix + 'post.userid as _uid, '
-            + prefix + 'thread.forumid as _cid, '
-            + prefix + 'post.title as _title, '
-            + prefix + 'post.pagetext as _content, '
-            + prefix + 'post.username as _guest, '
-            + prefix + 'post.ipaddress as _ip, '
-            + prefix + 'post.dateline as _timestamp, '
-            + prefix + 'thread.views as _viewcount, '
-            + prefix + 'thread.open as _open, '
-            + prefix + 'thread.deletedcount as _deleted, '
-            + prefix + 'thread.sticky as _pinned '
-            + 'FROM ' + prefix + 'thread '
-            + 'JOIN ' + prefix + 'post ON ' + prefix + 'thread.firstpostid=' + prefix + 'post.postid '
+            + prefix + 'exp_forum_topics.topic_id as _tid, '
+            + prefix + 'exp_forum_topics.author_id as _uid, '
+            + prefix + 'exp_forum_topics.forum_id as _cid, '
+            + prefix + 'exp_forum_topics.title as _title, '
+            + prefix + 'exp_forum_topics.body as _content, '
+//            + prefix + 'exp_members.username as _guest, '  
+            + prefix + 'exp_forum_topics.ip_address as _ip, '
+            + prefix + 'exp_forum_topics.topic_date as _timestamp, '
+            + prefix + 'exp_forum_topics.thread_views as _viewcount, '
+            + prefix + 'exp_forum_topics.status as _open, '
+//            + prefix + 'exp_forum_topics.pentry_id as _deleted, '  // not used
+            + prefix + 'exp_forum_topics.sticky as _pinned '
+            + 'FROM ' + prefix + 'exp_forum_topics '
+//            + 'JOIN ' + prefix + 'exp_members ON ' + prefix + 'exp_forum_topics.author_id=' + prefix + 'exp_members.member_id '
             + (start >= 0 && limit >= 0 ? 'LIMIT ' + start + ',' + limit : '');
 
         Exporter.query(query,
@@ -362,7 +353,8 @@ var logPrefix = '[nodebb-plugin-import-vbulletin]';
                 rows.forEach(function(row) {
                     row._title = row._title ? row._title[0].toUpperCase() + row._title.substr(1) : 'Untitled';
                     row._timestamp = ((row._timestamp || 0) * 1000) || startms;
-                    row._locked = row._open ? 0 : 1;
+                    row._pinned = (row._pinned == 'y') ? 1 : 0;
+                    row._locked = (row._open == 'o') ? 0 : 1;
                     
                     map[row._tid] = row;
                 });
@@ -380,14 +372,15 @@ var logPrefix = '[nodebb-plugin-import-vbulletin]';
         var prefix = Exporter.config('prefix');
         var startms = +new Date();
         var query = 'SELECT '
-            + prefix + 'post.postid as _pid, '
-            + prefix + 'post.threadid as _tid, '
-            + prefix + 'post.userid as _uid, '
-            + prefix + 'post.username as _guest, '
-            + prefix + 'post.ipaddress as _ip, '
-            + prefix + 'post.pagetext as _content, '
-            + prefix + 'post.dateline as _timestamp '
-            + 'FROM ' + prefix + 'post WHERE ' + prefix + 'post.parentid<>0 '
+            + prefix + 'exp_forum_posts.post_id as _pid, '
+            + prefix + 'exp_forum_posts.topic_id as _tid, '
+            + prefix + 'exp_forum_posts.author_id as _uid, '
+//            + prefix + 'exp_members.username as _guest, '
+            + prefix + 'exp_forum_posts.ip_address as _ip, '
+            + prefix + 'exp_forum_posts.body as _content, '
+            + prefix + 'exp_forum_posts.post_date as _timestamp '
+            + 'FROM ' + prefix + 'exp_forum_posts WHERE ' + prefix + 'exp_forum_posts.topic_id<>0 '
+//            + 'JOIN ' + prefix + 'exp_members ON ' + prefix + 'exp_forum_posts.author_id=' + prefix + 'exp_members.member_id '
             + (start >= 0 && limit >= 0 ? 'LIMIT ' + start + ',' + limit : '');
 
         Exporter.query(query,
