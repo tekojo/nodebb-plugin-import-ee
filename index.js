@@ -125,6 +125,7 @@ var logPrefix = '[nodebb-plugin-import-ee]';
             + prefix + 'exp_urs_member_reward.points as _reputation '
             + 'FROM ' + prefix + 'exp_members '
             + 'JOIN ' + prefix + 'exp_urs_member_reward ON ' + prefix + 'exp_members.member_id=' + prefix + 'exp_urs_member_reward.member_id '
+				+ 'WHERE exp_members.last_comment_date<>0 or exp_members.last_forum_post_date<>0 '
             + (start >= 0 && limit >= 0 ? 'LIMIT ' + start + ',' + limit : '');
 
 
@@ -160,73 +161,6 @@ var logPrefix = '[nodebb-plugin-import-ee]';
                 });
         });
     };
-
-
-/*     var getCometChatPaginatedMessages = function(start, limit, callback) {
-        callback = !_.isFunction(callback) ? noop : callback;
-
-        var startms = +new Date();
-        var prefix = Exporter.config('prefix') || '';
-        var query = 'SELECT '
-            + prefix + 'cometchat.id as _mid, '
-            + prefix + 'cometchat.from as _fromuid, '
-            + prefix + 'cometchat.to as _touid, '
-            + prefix + 'cometchat.message as _content, '
-            + prefix + 'cometchat.sent as _timestamp, '
-            + prefix + 'cometchat.read as _read '
-            + 'FROM ' + prefix + 'cometchat '
-            + (start >= 0 && limit >= 0 ? 'LIMIT ' + start + ',' + limit : '');
-
-        Exporter.query(query,
-            function(err, rows) {
-                if (err) {
-                    Exporter.error(err);
-                    return callback(err);
-                }
-                //normalize here
-                var map = {};
-                rows.forEach(function(row) {
-                    row._timestamp = ((row._timestamp || 0) * 1000) || startms;
-                    map[row._mid] = row;
-                });
-
-                callback(null, map);
-            });
-    }; 
-    */
-
-/*    var getArrowChatPaginatedMessages = function(start, limit, callback) {
-        callback = !_.isFunction(callback) ? noop : callback;
-
-        var startms = +new Date();
-        var prefix = Exporter.config('prefix') || '';
-        var query = 'SELECT '
-            + prefix + 'arrowchat.id as _mid, '
-            + prefix + 'arrowchat.from as _fromuid, '
-            + prefix + 'arrowchat.to as _touid, '
-            + prefix + 'arrowchat.message as _content, '
-            + prefix + 'arrowchat.sent as _timestamp, '
-            + prefix + 'arrowchat.read as _read '
-            + 'FROM ' + prefix + 'arrowchat '
-            + (start >= 0 && limit >= 0 ? 'LIMIT ' + start + ',' + limit : '');
-
-        Exporter.query(query,
-            function(err, rows) {
-                if (err) {
-                    Exporter.error(err);
-                    return callback(err);
-                }
-                //normalize here
-                var map = {};
-                rows.forEach(function(row) {
-                    row._timestamp = ((row._timestamp || 0) * 1000) || startms;
-                    map[row._mid] = row;
-                });
-
-                callback(null, map);
-            });
-    };
-    */
 
     var supportedPlugins = {
     };
