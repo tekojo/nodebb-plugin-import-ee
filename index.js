@@ -34,13 +34,6 @@ var logPrefix = '[nodebb-plugin-import-ee]';
             messagesPlugin: ''
         });
 
-        if (!config.custom.messagesPlugin) {
-            Exporter.warn('\nNo chat plugin was entered in the custom config. Falling back to Core.'
-            + '\nWere you using a chat plugin for chat? if so, enter it in the custom config in the "pre import settings" as a valid JSON value. '
-            + '\ni.e. {"messagesPlugin": "arrowchat"} or {"messagesPlugin": "cometchat"}'
-            + '\nCurrently the supported plugins are: ' + Object.keys(supportedPlugins).join(', ') + '\n');
-        }
-
         Exporter.connection = mysql.createConnection(_config);
         Exporter.connection.connect();
 
@@ -72,11 +65,11 @@ var logPrefix = '[nodebb-plugin-import-ee]';
         }
         var prefix = Exporter.config('prefix');
         var query = 'SELECT '
-            + prefix + 'exp_member_group.group_id as _gid, '
-            + prefix + 'exp_member_group.group_title as _title, '
-            + prefix + 'exp_member_group.can_email_from_profile as _pmpermissions, ' // pm as in private messaging
-            + prefix + 'exp_member_group.can_admin_upload_prefs as _adminpermissions '
-            + ' from ' + prefix + 'exp_member_group ';
+            + prefix + 'exp_member_groups.group_id as _gid, '
+            + prefix + 'exp_member_groups.group_title as _title, '
+            + prefix + 'exp_member_groups.can_email_from_profile as _pmpermissions, ' // pm as in private messaging
+            + prefix + 'exp_member_groups.can_admin_upload_prefs as _adminpermissions '
+            + ' from ' + prefix + 'exp_member_groups ';
         Exporter.query(query,
             function(err, rows) {
                 if (err) {
@@ -123,15 +116,15 @@ var logPrefix = '[nodebb-plugin-import-ee]';
         var startms = +new Date();
 
         var query = 'SELECT '
-            + prefix + 'exp_member.member_id as _uid, '
-            + prefix + 'exp_member.email as _email, '
-            + prefix + 'exp_member.username as _username, '
-            + prefix + 'exp_member.signature as _signature, '
-            + prefix + 'exp_member.join_date as _joindate, '
-            + prefix + 'exp_member.url as _website, '
+            + prefix + 'exp_members.member_id as _uid, '
+            + prefix + 'exp_members.email as _email, '
+            + prefix + 'exp_members.username as _username, '
+            + prefix + 'exp_members.signature as _signature, '
+            + prefix + 'exp_members.join_date as _joindate, '
+            + prefix + 'exp_members.url as _website, '
             + prefix + 'exp_urs_member_reward.points as _reputation, '
-            + 'FROM ' + prefix + 'exp_member '
-//           + 'LEFT JOIN ' + prefix + 'exp_urs_member_reward ON ' + prefix + 'exp_member.member_id=' + prefix + 'exp_urs_member_reward.member_id '
+            + 'FROM ' + prefix + 'exp_members '
+            + 'LEFT JOIN ' + prefix + 'exp_urs_member_reward ON ' + prefix + 'exp_member.member_id=' + prefix + 'exp_urs_member_reward.member_id '
             + (start >= 0 && limit >= 0 ? 'LIMIT ' + start + ',' + limit : '');
 
 
