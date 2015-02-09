@@ -292,7 +292,7 @@ var logPrefix = '[nodebb-plugin-import-ee]';
             + prefix + 'exp_forums.forum_id as _cid, '
             + prefix + 'exp_forums.forum_name as _name, '
             + prefix + 'exp_forums.forum_description as _description, '
-            + prefix + 'exp_forums.forum_topic_order as _order '
+            + prefix + 'exp_forums.forum_order as _order '
             + 'FROM ' + prefix + 'exp_forums ' 
             + (start >= 0 && limit >= 0 ? 'LIMIT ' + start + ',' + limit : '');
 
