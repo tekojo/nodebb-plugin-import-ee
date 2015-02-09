@@ -122,9 +122,9 @@ var logPrefix = '[nodebb-plugin-import-ee]';
             + prefix + 'exp_members.signature as _signature, '
             + prefix + 'exp_members.join_date as _joindate, '
             + prefix + 'exp_members.url as _website, '
-            + prefix + 'exp_urs_member_reward.points as _reputation, '
+            + prefix + 'exp_urs_member_reward.points as _reputation '
             + 'FROM ' + prefix + 'exp_members '
-            + 'JOIN ' + prefix + 'exp_urs_member_reward ON ' + prefix + 'exp_member.member_id=' + prefix + 'exp_urs_member_reward.member_id '
+            + 'JOIN ' + prefix + 'exp_urs_member_reward ON ' + prefix + 'exp_members.member_id=' + prefix + 'exp_urs_member_reward.member_id '
             + (start >= 0 && limit >= 0 ? 'LIMIT ' + start + ',' + limit : '');
 
 
