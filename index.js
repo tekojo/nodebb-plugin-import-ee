@@ -183,7 +183,7 @@ var logPrefix = '[nodebb-plugin-import-ee]';
         var query = 'SELECT '
             + prefix + 'exp_message_data.message_id as _mid, '
             + prefix + 'exp_message_data.sender_id as _fromuid, '
-            + prefix + 'exp_message_data.message_recipient as _touid, '
+            + prefix + 'exp_message_data.message_recipients as _touid, '
             + prefix + 'exp_message_data.message_body as _content, '
             + prefix + 'exp_message_data.message_date as _timestamp '
             + 'FROM ' + prefix + 'exp_message_data '
