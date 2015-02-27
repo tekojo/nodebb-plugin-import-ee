@@ -5,7 +5,7 @@ require('./index').testrun({
     dbport: 3306,
     dbname: 'qtdn',
     dbuser: 'root',
-    dbpass: 'password',
+    dbpass: 'root',
 
     tablePrefix: ''
 }, function(err, results) {

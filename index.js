@@ -153,6 +153,8 @@ var logPrefix = '[nodebb-plugin-import-ee]';
 
                         row._level = (groups[row._gid] || {})._level || '';
                         row._banned = (groups[row._gid] || {})._banned || 0;
+                        
+                        row._reputation = Math.floor(row._reputation / 10);
 
                         map[row._uid] = row;
                     });
